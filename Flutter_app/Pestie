@@ -1,0 +1,310 @@
+import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
+import 'dart:math';
+import 'dart:ui';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
+
+List<CameraDescription> cameras = [];
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  cameras = await availableCameras();
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Pestie',
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        fontFamily: 'Open Sans',
+        brightness: Brightness.dark,
+      ),
+      home: const CameraScreen(),
+    );
+  }
+}
+
+class CameraScreen extends StatefulWidget {
+  const CameraScreen({Key? key}) : super(key: key);
+
+  @override
+  _CameraScreenState createState() => _CameraScreenState();
+}
+
+class _CameraScreenState extends State<CameraScreen>
+    with SingleTickerProviderStateMixin {
+  late CameraController _controller;
+  late Future<void> _initializeControllerFuture;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = CameraController(cameras[0], ResolutionPreset.high);
+    _initializeControllerFuture = _controller.initialize();
+
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+    _animation =
+        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text(
+          'Pestie',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white, // White text for "Pestie"
+          ),
+        ),
+        backgroundColor: Colors.green, // Green background
+        elevation: 0,
+        centerTitle: true, // Remove shadow for a flat look
+        actions: [
+          IconButton(
+            icon: AnimatedIcon(
+              icon: AnimatedIcons.menu_close,
+              progress: _animation,
+              color: Colors.white, // White icon color
+            ),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: FutureBuilder<void>(
+        future: _initializeControllerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                CameraPreview(_controller),
+                CustomPaint(
+                  painter: EnhancedOverlayPainter(animation: _animation),
+                ),
+                Positioned(
+                  bottom: 100,
+                  left: 20,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Detected:',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 16)),
+                        SizedBox(height: 5),
+                        Text('No pests found',
+                            style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          } else {
+            return Center(
+              child: LoadingAnimation(),
+            );
+          }
+        },
+      ),
+      floatingActionButton: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return Transform.rotate(
+            angle: _animation.value * 2 * pi,
+            child: FloatingActionButton(
+              onPressed: () {},
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(Icons.camera, size: 30, color: Colors.white),
+                  Icon(Icons.eco, size: 15, color: Colors.greenAccent),
+                ],
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: _buildGlassmorphicBottomAppBar(),
+    );
+  }
+
+  Widget _buildGlassmorphicBottomAppBar() {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(
+                  icon: Icon(Icons.healing, color: Colors.green[300]),
+                  onPressed: () {}),
+              IconButton(
+                  icon: Icon(Icons.bug_report, color: Colors.green[300]),
+                  onPressed: () {}),
+              IconButton(
+                  icon: Icon(Icons.history, color: Colors.green[300]),
+                  onPressed: () {}),
+              IconButton(
+                  icon: Icon(Icons.eco, color: Colors.green[300]),
+                  onPressed: () {}),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class EnhancedOverlayPainter extends CustomPainter {
+  final Animation<double> animation;
+
+  EnhancedOverlayPainter({required this.animation}) : super(repaint: animation);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.greenAccent.withOpacity(0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    final radius = size.width * 0.4;
+
+    // Draw the main animated circle
+    canvas.drawCircle(
+        Offset(centerX, centerY), radius * animation.value, paint);
+
+    // Draw scanning effect
+    final scanPaint = Paint()
+      ..color = Colors.green.withOpacity(0.2)
+      ..style = PaintingStyle.fill;
+
+    final scanPath = Path()
+      ..moveTo(centerX, centerY)
+      ..lineTo(centerX + radius * cos(animation.value * 2 * pi),
+          centerY + radius * sin(animation.value * 2 * pi))
+      ..arcTo(
+        Rect.fromCircle(center: Offset(centerX, centerY), radius: radius),
+        animation.value * 2 * pi,
+        pi / 2,
+        false,
+      )
+      ..close();
+
+    canvas.drawPath(scanPath, scanPaint);
+
+    // Draw corner brackets
+    final bracketPaint = Paint()
+      ..color = Colors.white.withOpacity(0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+
+    final bracketSize = size.width * 0.1;
+
+    // Top-left bracket
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, bracketSize)
+        ..lineTo(0, 0)
+        ..lineTo(bracketSize, 0),
+      bracketPaint,
+    );
+
+    // Top-right bracket
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width - bracketSize, 0)
+        ..lineTo(size.width, 0)
+        ..lineTo(size.width, bracketSize),
+      bracketPaint,
+    );
+
+    // Bottom-left bracket
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, size.height - bracketSize)
+        ..lineTo(0, size.height)
+        ..lineTo(bracketSize, size.height),
+      bracketPaint,
+    );
+
+    // Bottom-right bracket
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width - bracketSize, size.height)
+        ..lineTo(size.width, size.height)
+        ..lineTo(size.width, size.height - bracketSize),
+      bracketPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
+}
+
+class LoadingAnimation extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SvgPicture.asset(
+          'assets/bug_icon.svg',
+          width: 100,
+          height: 100,
+        ),
+        SizedBox(height: 20),
+        CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+        ),
+        SizedBox(height: 20),
+        Text(
+          'Loading Pestie...',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+      ],
+    );
+  }
+}
