@@ -13,6 +13,70 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+// Treatment Screen
+class TreatmentScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Treatment Guide'),
+        backgroundColor: Color(0xFF006400),
+      ),
+      body: Center(
+        child: Text('Treatment Guide Screen - Add content here'),
+      ),
+    );
+  }
+}
+
+// Pest Library Screen
+class PestLibraryScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pest Library'),
+        backgroundColor: Color(0xFF006400),
+      ),
+      body: Center(
+        child: Text('Pest Library Screen - Add content here'),
+      ),
+    );
+  }
+}
+
+// History Screen
+class HistoryScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Scan History'),
+        backgroundColor: Color(0xFF006400),
+      ),
+      body: Center(
+        child: Text('History Screen - Add content here'),
+      ),
+    );
+  }
+}
+
+// Eco Tips Screen
+class EcoTipsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Eco Tips'),
+        backgroundColor: Color(0xFF006400),
+      ),
+      body: Center(
+        child: Text('Eco Tips Screen - Add content here'),
+      ),
+    );
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
@@ -200,16 +264,38 @@ class _CameraScreenState extends State<CameraScreen>
             children: [
               IconButton(
                   icon: Icon(Icons.healing, color: Colors.green[900]),
-                  onPressed: () {}),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => TreatmentScreen()),
+                    );
+                  }),
               IconButton(
                   icon: Icon(Icons.bug_report, color: Colors.green[900]),
-                  onPressed: () {}),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => PestLibraryScreen()),
+                    );
+                  }),
               IconButton(
                   icon: Icon(Icons.history, color: Colors.green[900]),
-                  onPressed: () {}),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HistoryScreen()),
+                    );
+                  }),
               IconButton(
                   icon: Icon(Icons.eco, color: Colors.green[900]),
-                  onPressed: () {}),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => EcoTipsScreen()),
+                    );
+                  }),
             ],
           ),
         ),
